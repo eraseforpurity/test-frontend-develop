@@ -22,22 +22,24 @@ const style = {
 };
 
 type IModalWindow = {
-  //   newRow: IRemixCreateDto | IRemixUpdateDto;
+  newRow?: IRemixCreateDto | IRemixUpdateDto;
   open: boolean;
   handleClose: () => void;
 };
 
-// newRow.defaultProps = {
-//   name: '',
-//   description: '',
-//   authorEmail: '',
-//   genre: GenreTypeEnum.Electronic,
-//   isStore: true,
-//   price: 0,
-//   trackLength: 0
-// };
+const defaultProps = {
+  newRow: {
+    name: 'John',
+    description: '',
+    authorEmail: '',
+    genre: GenreTypeEnum.Electronic,
+    isStore: true,
+    price: 0,
+    trackLength: 0
+  }
+};
 
-const ModalWindow = ({ open, handleClose }: IModalWindow) => {
+const ModalWindow = ({ newRow, open, handleClose }: IModalWindow) => {
   const [genre, setGenre] = React.useState('');
   const handleChange = (event: SelectChangeEvent) => {
     setGenre(event.target.value as string);
@@ -73,7 +75,7 @@ const ModalWindow = ({ open, handleClose }: IModalWindow) => {
           <TableBody>
             <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
               <TableCell component="th" scope="newRow">
-                <TextField id="name" name="name" />
+                <TextField id="name" name="name" value={newRow?.name} />
               </TableCell>
               <TableCell align="center">
                 <TextField id="authorEmail" name="authorEmail" />
@@ -107,5 +109,7 @@ const ModalWindow = ({ open, handleClose }: IModalWindow) => {
     </Modal>
   );
 };
+
+ModalWindow.defaultProps = defaultProps;
 
 export default ModalWindow;
