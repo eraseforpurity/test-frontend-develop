@@ -1,0 +1,21 @@
+generates:
+  src/graphql/types/_server.ts:
+    schema: https://test-backend.smm.dev.architech.nyc/graphql
+    plugins:
+      - add:
+          content:
+            - '// ------------------------------------------------------'
+            - '// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)'
+            - '// ------------------------------------------------------'
+      - typescript
+      - typescript-operations
+    config:
+      avoidOptionals: false
+      typesPrefix: I
+      enumPrefix: false
+      declarationKind:
+        type: 'interface'
+        input: 'interface'
+      scalars:
+        AWSDateTime: string
+        JSON: object
