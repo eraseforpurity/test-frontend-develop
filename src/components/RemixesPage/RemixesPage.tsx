@@ -9,6 +9,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { IRemixModel } from '../../graphql/types/_server';
+import AbsoluteLoading from '../../shared/ui/AbsoluteLoading/AbsoluteLoading';
 
 const RemixesPage: FC = () => {
   const payload = {
@@ -39,11 +40,13 @@ const RemixesPage: FC = () => {
     }
   `;
 
-  const Remixes = useQuery(GET_REMIXES, { variables: { payload } });
+  const { loading, error, data } = useQuery(GET_REMIXES, { variables: { payload } });
 
-  console.log(Remixes.data);
+  console.log(data?.remixes.items, loading, error);
 
-  const remixesRows = Remixes?.data?.items;
+  const remixesRows = data?.remixes?.items;
+
+  if (loading) return <AbsoluteLoading />;
 
   return (
     <Container>
@@ -66,12 +69,12 @@ const RemixesPage: FC = () => {
                 <TableCell component="th" scope="row">
                   {row.name}
                 </TableCell>
-                <TableCell align="right">{}</TableCell>
-                <TableCell align="right">{}</TableCell>
-                <TableCell align="right">{}</TableCell>
-                <TableCell align="right">{}</TableCell>
-                <TableCell align="right">{}</TableCell>
-                <TableCell align="right">{}</TableCell>
+                <TableCell align="right">{row.authorEmail}</TableCell>
+                <TableCell align="right">{row.genre}</TableCell>
+                <TableCell align="right">{row.description}</TableCell>
+                <TableCell align="right">{row.price}</TableCell>
+                <TableCell align="right">{row.trackLength}</TableCell>
+                <TableCell align="right">{row.isStore && 'true'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
