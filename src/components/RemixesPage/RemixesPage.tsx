@@ -1,7 +1,6 @@
-import React, { FC, useEffect, useState } from 'react';
-import { gql, useQuery } from '@apollo/client';
-import { useFormik } from 'formik';
-import * as yup from 'yup';
+import React, { FC, useState } from 'react';
+import { useQuery, useMutation } from '@apollo/client';
+import { useSnackbar } from 'notistack';
 import { Container } from '@mui/material';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -10,62 +9,52 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import { IRemixModel } from '../../graphql/types/_server';
+import { IRemixModel, IFilterDto, IRemixGetDto } from '../../graphql/types/_server';
 import AbsoluteLoading from '../../shared/ui/AbsoluteLoading/AbsoluteLoading';
 import ModalWindow from '../../shared/ModalWindow/ModalWindow';
-
-// const validationSchema = yup.object({
-//   email: yup.string('Enter your email').email('Enter a valid email').required('Email is required'),
-//   password: yup
-//     .string('Enter your password')
-//     .min(8, 'Password should be of minimum 8 characters length')
-//     .required('Password is required')
-// });
+import { DELETE_REMIX } from '../../graphql/mutations/mutations';
+import { GET_REMIXES } from '../../graphql/queries/queries';
 
 const RemixesPage: FC = () => {
-  const payload = {
+  const remixesPayload = {
     filters: [],
     sorts: []
   };
 
-  const GET_REMIXES = gql`
-    query GetRemixes($payload: RemixGetDTO!) {
-      remixes(payload: $payload) {
-        items {
-          authorEmail
-          createdDate
-          description
-          genre
-          id
-          isStore
-          name
-          price
-          trackLength
-          updatedDate
-        }
-        meta {
-          isMy
-          total
-        }
-      }
-    }
-  `;
+  const useQueryTable = (remixesPayload: IRemixGetDto) => {
+    const { loading, error, data, refetch } = useQuery(GET_REMIXES, {
+      variables: { payload: { ...remixesPayload } }
+    });
+    const remixes = data?.remixes.items;
 
-  const { loading, error, data } = useQuery(GET_REMIXES, { variables: { payload } });
+    const refetchRemixes = () => refetch({ payload: { ...remixesPayload } });
 
-  const [tableState, setTableState] = useState<IRemixModel[]>([]);
+    return { getRemixesLoading: loading, getRemixesError: error, remixes, refetchRemixes };
+  };
 
-  useEffect(() => {
-    setTableState(data?.remixes.items);
-  }, [data]);
+  const { getRemixesLoading, remixes, refetchRemixes } = useQueryTable(remixesPayload);
+
+  const [deleteRemix] = useMutation(DELETE_REMIX);
+
+  const { enqueueSnackbar } = useSnackbar();
 
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setId(undefined);
+  };
+  const [id, setId] = useState(undefined);
 
-  if (loading) return <AbsoluteLoading />;
+  const handleDeleteRemixClick = (id: number) => {
+    deleteRemix({ variables: { payload: { id } } }).then(() => {
+      enqueueSnackbar('Row was deleted');
+      refetchRemixes();
+    });
+  };
+
+  if (getRemixesLoading) return <AbsoluteLoading />;
 
   return (
     <Container sx={{ display: 'flex', flexDirection: 'column' }} maxWidth="lg">
@@ -84,7 +73,7 @@ const RemixesPage: FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {tableState?.map((row: IRemixModel) => (
+            {remixes?.map((row: IRemixModel) => (
               <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                 <TableCell component="th" scope="row">
                   {row.name}
@@ -99,7 +88,11 @@ const RemixesPage: FC = () => {
                   <Button sx={{ mr: '10px', '&:hover': { bgcolor: 'green' } }} variant="contained">
                     Edit
                   </Button>
-                  <Button sx={{ '&:hover': { bgcolor: 'red' } }} variant="contained">
+                  <Button
+                    onClick={() => handleDeleteRemixClick(row.id)}
+                    sx={{ '&:hover': { bgcolor: 'red' } }}
+                    variant="contained"
+                  >
                     Delete
                   </Button>
                 </TableCell>
@@ -111,7 +104,9 @@ const RemixesPage: FC = () => {
       <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
         Add Row
       </Button>
-      <ModalWindow open={open} handleClose={handleClose} />
+      {open && (
+        <ModalWindow refetch={refetchRemixes} id={id} open={open} handleClose={handleClose} />
+      )}
     </Container>
   );
 };
