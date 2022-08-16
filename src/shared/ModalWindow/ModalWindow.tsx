@@ -1,9 +1,7 @@
-import React, { useEffect } from 'react';
 import { useSnackbar } from 'notistack';
 import { useMutation } from '@apollo/client';
 import Modal from '@mui/material/Modal';
 import { useFormik } from 'formik';
-import * as Yup from 'yup';
 import {
   TextField,
   Box,
@@ -13,74 +11,41 @@ import {
   FormControlLabel,
   Checkbox
 } from '@mui/material';
+import styles from './styles';
 import BackdropLoading from '../ui/BackdropLoading/BackdropLoading';
-import { IRemixCreateDto, GenreTypeEnum, IRemixUpdateDto } from '../../graphql/types/_server';
+import { GenreTypeEnum } from '../../graphql/types/_server';
 import { CREATE_REMIX } from '../../graphql/mutations/mutations';
-
-const style = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: '90%',
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4
-};
-
-const boxStyle = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr 1fr',
-  gap: '30px'
-};
+import { validationSchema } from '../../helpers/validation/validationSchema';
 
 type IModalWindow = {
-  // newRow?: IRemixCreateDto | IRemixUpdateDto;
   open: boolean;
   handleClose: () => void;
   id: boolean | undefined;
-  refetch?: () => void;
 };
 
-const defaultProps = {
-  refetch: () => {}
-};
-
-const SignupSchema = Yup.object().shape({
-  authorEmail: Yup.string().email('Invalid email').required('Required'),
-  description: Yup.string().max(500, 'Maximum 500 charaters'),
-  name: Yup.string()
-    .min(3, 'Minimal 3 charaters')
-    .max(50, 'Maximum 50 charaters')
-    .required('Required'),
-  price: Yup.number().max(1000, 'Max price is 1000').min(0, 'Min price is 0'),
-  trackLength: Yup.number().max(300, 'Max trackLength is 1000').min(0, 'Min trackLength is 0')
-});
-const ModalWindow = ({ open, handleClose, id, refetch }: IModalWindow) => {
+const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [createRemix, { data, loading, error }] = useMutation(CREATE_REMIX);
+  const [createRemix, { loading }] = useMutation(CREATE_REMIX);
 
   const formik = useFormik({
     initialValues: {
       authorEmail: '',
       description: '',
       genre: GenreTypeEnum.Pop,
-      isStore: false,
+      isStore: true,
       name: '',
       price: 0,
       trackLength: 0
     },
-    validationSchema: SignupSchema,
+    validationSchema,
     onSubmit: (values) => {
       createRemix({ variables: { payload: { ...values } } })
         .then(() => {
-          refetch && refetch();
           enqueueSnackbar('Row was added');
           handleClose();
         })
-        .catch((err) => enqueueSnackbar(err));
+        .catch(() => enqueueSnackbar('oops, an error'));
     }
   });
 
@@ -88,9 +53,9 @@ const ModalWindow = ({ open, handleClose, id, refetch }: IModalWindow) => {
 
   return (
     <Modal open={open} onClose={handleClose}>
-      <Box sx={style}>
+      <Box sx={styles.modal}>
         <form onSubmit={formik.handleSubmit}>
-          <Box sx={boxStyle}>
+          <Box sx={styles.formContainer}>
             <TextField
               helperText={formik.touched.name && formik.errors.name}
               error={formik.touched.name && Boolean(formik.errors.name)}
@@ -177,7 +142,5 @@ const ModalWindow = ({ open, handleClose, id, refetch }: IModalWindow) => {
     </Modal>
   );
 };
-
-ModalWindow.defaultProps = defaultProps;
 
 export default ModalWindow;

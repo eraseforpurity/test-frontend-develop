@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import { FC, useCallback, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { useSnackbar } from 'notistack';
 import { Container } from '@mui/material';
@@ -10,51 +10,47 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
-import { IRemixModel, IFilterDto, IRemixGetDto } from '../../graphql/types/_server';
+import { IRemixModel } from '../../graphql/types/_server';
 import AbsoluteLoading from '../../shared/ui/AbsoluteLoading/AbsoluteLoading';
 import ModalWindow from '../../shared/ModalWindow/ModalWindow';
 import { DELETE_REMIX } from '../../graphql/mutations/mutations';
 import { GET_REMIXES } from '../../graphql/queries/queries';
 
 const RemixesPage: FC = () => {
-  const remixesPayload = {
-    filters: [],
-    sorts: []
-  };
-
-  const useQueryTable = (remixesPayload: IRemixGetDto) => {
-    const { loading, error, data, refetch } = useQuery(GET_REMIXES, {
-      variables: { payload: { ...remixesPayload } }
-    });
-    const remixes = data?.remixes.items;
-
-    const refetchRemixes = () => refetch({ payload: { ...remixesPayload } });
-
-    return { getRemixesLoading: loading, getRemixesError: error, remixes, refetchRemixes };
-  };
-
-  const { getRemixesLoading, remixes, refetchRemixes } = useQueryTable(remixesPayload);
-
-  const [deleteRemix] = useMutation(DELETE_REMIX);
-
   const { enqueueSnackbar } = useSnackbar();
 
-  const [open, setOpen] = React.useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => {
-    setOpen(false);
-    setId(undefined);
-  };
+  const [open, setOpen] = useState(false);
   const [id, setId] = useState(undefined);
+  const [remixesPayload, setRemixesPayload] = useState({
+    filters: [],
+    sorts: []
+  });
 
-  const handleDeleteRemixClick = (id: number) => {
-    deleteRemix({ variables: { payload: { id } } }).then(() => {
-      enqueueSnackbar('Row was deleted');
-      refetchRemixes();
-    });
-  };
+  const { loading, data, refetch } = useQuery(GET_REMIXES, {
+    variables: { payload: { ...remixesPayload }, notifyOnNetworkStatusChange: true }
+  });
+  const [deleteRemix, { loading: deleteLoading }] = useMutation(DELETE_REMIX);
+  const remixes = data?.remixes.items;
 
-  if (getRemixesLoading) return <AbsoluteLoading />;
+  const handleOpen = () => setOpen(true);
+
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    refetch({ payload: { ...remixesPayload } });
+    setId(undefined);
+  }, [remixesPayload, open]);
+
+  const handleDeleteRemixClick = useCallback(
+    (id: number) => {
+      deleteRemix({ variables: { payload: { id } } }).then(() => {
+        enqueueSnackbar('Row was deleted');
+        refetch({ payload: { ...remixesPayload } });
+      });
+    },
+    [remixesPayload, data]
+  );
+
+  if (loading || deleteLoading) return <AbsoluteLoading />;
 
   return (
     <Container sx={{ display: 'flex', flexDirection: 'column' }} maxWidth="lg">
@@ -104,9 +100,7 @@ const RemixesPage: FC = () => {
       <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
         Add Row
       </Button>
-      {open && (
-        <ModalWindow refetch={refetchRemixes} id={id} open={open} handleClose={handleClose} />
-      )}
+      <ModalWindow id={id} open={open} handleClose={handleClose} />
     </Container>
   );
 };
