@@ -10,6 +10,11 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
+import Pagination from '@mui/material/Pagination';
+import IconButton from '@mui/material/IconButton';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+
 import { IRemixModel } from '../../graphql/types/_server';
 import AbsoluteLoading from '../../shared/ui/AbsoluteLoading/AbsoluteLoading';
 import ModalWindow from '../../shared/ModalWindow/ModalWindow';
@@ -20,18 +25,24 @@ const RemixesPage: FC = () => {
   const { enqueueSnackbar } = useSnackbar();
 
   const [open, setOpen] = useState(false);
-  const [id, setId] = useState(undefined);
+  const [id, setId] = useState<number | undefined>(undefined);
   const [remixesPayload, setRemixesPayload] = useState({
     filters: [],
-    sorts: []
+    sorts: [],
+    paginate: {
+      skip: 0,
+      take: 5
+    }
   });
 
   const { loading, data, refetch } = useQuery(GET_REMIXES, {
-    variables: { payload: { ...remixesPayload }, notifyOnNetworkStatusChange: true }
+    variables: { payload: { ...remixesPayload } },
+    notifyOnNetworkStatusChange: true
   });
   const [deleteRemix, { loading: deleteLoading }] = useMutation(DELETE_REMIX);
   const remixes = data?.remixes.items;
-
+  const totalItems = data?.remixes.meta.total;
+  console.log(totalItems);
   const handleOpen = () => setOpen(true);
 
   const handleClose = useCallback(() => {
@@ -49,6 +60,40 @@ const RemixesPage: FC = () => {
     },
     [remixesPayload, data]
   );
+
+  const handleEditRemixClick = useCallback(
+    (id: number) => {
+      setId(id);
+      handleOpen();
+    },
+    [id, open]
+  );
+
+  const handleNextPaginateClick = () => {
+    if (
+      remixesPayload.paginate.skip + remixesPayload.paginate.take <= totalItems &&
+      remixesPayload.paginate.take < totalItems
+    ) {
+      setRemixesPayload((prevState) => ({
+        ...prevState,
+        paginate: {
+          skip: prevState.paginate.skip + prevState.paginate.take,
+          take: prevState.paginate.take
+        }
+      }));
+    }
+  };
+  const handlePrevPaginateClick = () => {
+    if (remixesPayload.paginate.skip - remixesPayload.paginate.take >= 0) {
+      setRemixesPayload((prevState) => ({
+        ...prevState,
+        paginate: {
+          skip: prevState.paginate.skip - prevState.paginate.take,
+          take: prevState.paginate.take
+        }
+      }));
+    }
+  };
 
   if (loading || deleteLoading) return <AbsoluteLoading />;
 
@@ -81,7 +126,11 @@ const RemixesPage: FC = () => {
                 <TableCell align="center">{row.trackLength}</TableCell>
                 <TableCell align="center">{row.isStore && 'true'}</TableCell>
                 <TableCell align="center">
-                  <Button sx={{ mr: '10px', '&:hover': { bgcolor: 'green' } }} variant="contained">
+                  <Button
+                    onClick={() => handleEditRemixClick(row.id)}
+                    sx={{ mr: '10px', '&:hover': { bgcolor: 'green' } }}
+                    variant="contained"
+                  >
                     Edit
                   </Button>
                   <Button
@@ -97,9 +146,42 @@ const RemixesPage: FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
-        Add Row
-      </Button>
+      <Container sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
+          Add Row
+        </Button>
+        <div style={{ display: 'flex' }}>
+          <IconButton onClick={handlePrevPaginateClick}>
+            <ArrowBackIosIcon />
+          </IconButton>
+          <div>
+            <label htmlFor="pagination">
+              Show rows
+              <select
+                onChange={(e) => {
+                  setRemixesPayload((prevState) => {
+                    return {
+                      ...prevState,
+                      paginate: { ...prevState.paginate, take: +e.target.value }
+                    };
+                  });
+                }}
+                value={remixesPayload.paginate.take}
+                id="pagination"
+              >
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+              </select>
+            </label>
+            <Pagination count={Math.ceil(totalItems / 5)} />
+          </div>
+          <IconButton onClick={handleNextPaginateClick}>
+            <ArrowForwardIosIcon />
+          </IconButton>
+        </div>
+      </Container>
       <ModalWindow id={id} open={open} handleClose={handleClose} />
     </Container>
   );
