@@ -6,16 +6,13 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Pagination from '@mui/material/Pagination';
-import IconButton from '@mui/material/IconButton';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+import CustomTableHead from '@/shared/CustomTableHead/CustomTableHead';
 
-import { IRemixModel } from '../../graphql/types/_server';
+import { IRemixModel, IRemixGetDto, SortDirectionEnum } from '../../graphql/types/_server';
 import AbsoluteLoading from '../../shared/ui/AbsoluteLoading/AbsoluteLoading';
 import ModalWindow from '../../shared/ModalWindow/ModalWindow';
 import { DELETE_REMIX } from '../../graphql/mutations/mutations';
@@ -23,12 +20,12 @@ import { GET_REMIXES } from '../../graphql/queries/queries';
 
 const RemixesPage: FC = () => {
   const { enqueueSnackbar } = useSnackbar();
-
-  const [open, setOpen] = useState(false);
+  const [page, setPage] = useState<number>(1);
+  const [open, setOpen] = useState<boolean>(false);
   const [id, setId] = useState<number | undefined>(undefined);
-  const [remixesPayload, setRemixesPayload] = useState({
-    filters: [],
-    sorts: [],
+  const [remixesPayload, setRemixesPayload] = useState<IRemixGetDto>({
+    filters: undefined,
+    sorts: undefined,
     paginate: {
       skip: 0,
       take: 5
@@ -42,8 +39,8 @@ const RemixesPage: FC = () => {
   const [deleteRemix, { loading: deleteLoading }] = useMutation(DELETE_REMIX);
   const remixes = data?.remixes.items;
   const totalItems = data?.remixes.meta.total;
-  const handleOpen = () => setOpen(true);
 
+  const handleOpen = () => setOpen(true);
   const handleClose = useCallback(() => {
     setOpen(false);
     refetch({ payload: { ...remixesPayload } });
@@ -68,30 +65,31 @@ const RemixesPage: FC = () => {
     [id, open]
   );
 
-  const handleNextPaginateClick = () => {
-    if (
-      remixesPayload.paginate.skip + remixesPayload.paginate.take <= totalItems &&
-      remixesPayload.paginate.take < totalItems
-    ) {
-      setRemixesPayload((prevState) => ({
+  const handlePaginationChange = (value: number) => {
+    setPage(value);
+    setRemixesPayload((prevState) => {
+      return {
         ...prevState,
         paginate: {
-          skip: prevState.paginate.skip + prevState.paginate.take,
-          take: prevState.paginate.take
+          skip: prevState?.paginate?.take ? prevState.paginate.take * (value - 1) : 0,
+          take: prevState?.paginate?.take ? prevState?.paginate?.take : 5
         }
-      }));
-    }
+      };
+    });
   };
-  const handlePrevPaginateClick = () => {
-    if (remixesPayload.paginate.skip - remixesPayload.paginate.take >= 0) {
-      setRemixesPayload((prevState) => ({
-        ...prevState,
-        paginate: {
-          skip: prevState.paginate.skip - prevState.paginate.take,
-          take: prevState.paginate.take
+
+  const handleSortingClick = (columnName: string) => {
+    setRemixesPayload((prevState) => {
+      if (prevState.sorts?.length) {
+        const obj = prevState.sorts[0];
+        const currentDirection = obj.direction;
+        if (currentDirection === SortDirectionEnum.Asc) {
+          return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Desc }] };
         }
-      }));
-    }
+        return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
+      }
+      return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
+    });
   };
 
   if (loading || deleteLoading) return <AbsoluteLoading />;
@@ -100,18 +98,10 @@ const RemixesPage: FC = () => {
     <Container sx={{ display: 'flex', flexDirection: 'column' }} maxWidth="lg">
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
-          <TableHead>
-            <TableRow>
-              <TableCell size="small">Name</TableCell>
-              <TableCell align="center">authorEmail</TableCell>
-              <TableCell align="center">genre</TableCell>
-              <TableCell align="center">description</TableCell>
-              <TableCell align="center">price</TableCell>
-              <TableCell align="center">trackLength</TableCell>
-              <TableCell align="center">isStore</TableCell>
-              <TableCell align="center">Actions</TableCell>
-            </TableRow>
-          </TableHead>
+          <CustomTableHead
+            remixesPayload={remixesPayload}
+            handleSortingClick={handleSortingClick}
+          />
           <TableBody>
             {remixes?.map((row: IRemixModel) => (
               <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
@@ -145,41 +135,19 @@ const RemixesPage: FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Container sx={{ display: 'flex', justifyContent: 'space-between' }}>
+      <Container sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
           Add Row
         </Button>
-        <div style={{ display: 'flex' }}>
-          <IconButton onClick={handlePrevPaginateClick}>
-            <ArrowBackIosIcon />
-          </IconButton>
-          <div>
-            <label htmlFor="pagination">
-              Show rows
-              <select
-                onChange={(e) => {
-                  setRemixesPayload((prevState) => {
-                    return {
-                      ...prevState,
-                      paginate: { ...prevState.paginate, take: +e.target.value }
-                    };
-                  });
-                }}
-                value={remixesPayload.paginate.take}
-                id="pagination"
-              >
-                <option value={3}>3</option>
-                <option value={4}>4</option>
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-              </select>
-            </label>
-            <Pagination count={Math.ceil(totalItems / 5)} />
-          </div>
-          <IconButton onClick={handleNextPaginateClick}>
-            <ArrowForwardIosIcon />
-          </IconButton>
-        </div>
+
+        <Pagination
+          size="small"
+          page={page}
+          onChange={(_, value) => handlePaginationChange(value)}
+          count={Math.ceil(
+            remixesPayload?.paginate?.take ? totalItems / remixesPayload.paginate.take : 5
+          )}
+        />
       </Container>
       <ModalWindow id={id} open={open} handleClose={handleClose} />
     </Container>

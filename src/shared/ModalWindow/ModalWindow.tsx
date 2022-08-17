@@ -3,15 +3,7 @@ import { useSnackbar } from 'notistack';
 import { useMutation, useQuery } from '@apollo/client';
 import Modal from '@mui/material/Modal';
 import { useFormik } from 'formik';
-import {
-  TextField,
-  Box,
-  Button,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox
-} from '@mui/material';
+import { TextField, Box, Button, Select, MenuItem } from '@mui/material';
 import styles from './styles';
 import BackdropLoading from '../ui/BackdropLoading/BackdropLoading';
 import { GenreTypeEnum, IRemixCreateDto, IRemixUpdateDto } from '../../graphql/types/_server';
@@ -28,7 +20,7 @@ type IModalWindow = {
 const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [initialValues, setRemixById] = useState({
+  const [initialValues, setRemixById] = useState<IRemixCreateDto | IRemixUpdateDto>({
     authorEmail: '',
     description: '',
     genre: GenreTypeEnum.Pop,
@@ -36,15 +28,6 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
     name: '',
     price: 0,
     trackLength: 0
-  });
-
-  const formik = useFormik({
-    initialValues: { ...initialValues },
-    validationSchema,
-    enableReinitialize: true,
-    onSubmit: (values) => {
-      handleFormSubmit(values, id);
-    }
   });
 
   const isSkip = Boolean(id ?? false);
@@ -96,13 +79,22 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
       });
   };
 
-  const handleFormSubmit = (values: any, id: number | undefined) => {
-    if (id ?? true) {
+  const handleFormSubmit = (values: IRemixCreateDto | IRemixUpdateDto, id?: number) => {
+    if (id ?? false) {
       handleUpdateRemix(values);
     } else {
       handleCreateRemix(values);
     }
   };
+
+  const formik = useFormik({
+    initialValues: { ...initialValues },
+    validationSchema,
+    enableReinitialize: true,
+    onSubmit: (values) => {
+      handleFormSubmit(values, id);
+    }
+  });
 
   if (loading || getRemixByIdLoading || updateLoading) return <BackdropLoading />;
 
@@ -175,18 +167,6 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
               name="trackLength"
               value={formik.values.trackLength}
               onChange={formik.handleChange}
-            />
-
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="isStore"
-                  id="isStore"
-                  onChange={formik.handleChange}
-                  checked={formik.values.isStore}
-                />
-              }
-              label="Is Store"
             />
           </Box>
           <Button type="submit" variant="contained">
