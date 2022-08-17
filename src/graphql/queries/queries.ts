@@ -14,9 +14,23 @@ export const GET_REMIXES = gql`
         trackLength
       }
       meta {
-        isMy
         total
       }
+    }
+  }
+`;
+
+export const GET_REMIX_BY_ID = gql`
+  query GetRemixByID($payload: RemixIdDTO!) {
+    remixById(payload: $payload) {
+      authorEmail
+      description
+      genre
+      id
+      isStore
+      name
+      price
+      trackLength
     }
   }
 `;

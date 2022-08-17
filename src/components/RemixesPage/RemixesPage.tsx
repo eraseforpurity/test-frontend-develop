@@ -6,11 +6,13 @@ import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
-import { IRemixModel } from '../../graphql/types/_server';
+import Pagination from '@mui/material/Pagination';
+import CustomTableHead from '@/shared/CustomTableHead/CustomTableHead';
+
+import { IRemixModel, IRemixGetDto, SortDirectionEnum } from '../../graphql/types/_server';
 import AbsoluteLoading from '../../shared/ui/AbsoluteLoading/AbsoluteLoading';
 import ModalWindow from '../../shared/ModalWindow/ModalWindow';
 import { DELETE_REMIX } from '../../graphql/mutations/mutations';
@@ -18,22 +20,27 @@ import { GET_REMIXES } from '../../graphql/queries/queries';
 
 const RemixesPage: FC = () => {
   const { enqueueSnackbar } = useSnackbar();
-
-  const [open, setOpen] = useState(false);
-  const [id, setId] = useState(undefined);
-  const [remixesPayload, setRemixesPayload] = useState({
-    filters: [],
-    sorts: []
+  const [page, setPage] = useState<number>(1);
+  const [open, setOpen] = useState<boolean>(false);
+  const [id, setId] = useState<number | undefined>(undefined);
+  const [remixesPayload, setRemixesPayload] = useState<IRemixGetDto>({
+    filters: undefined,
+    sorts: undefined,
+    paginate: {
+      skip: 0,
+      take: 5
+    }
   });
 
   const { loading, data, refetch } = useQuery(GET_REMIXES, {
-    variables: { payload: { ...remixesPayload }, notifyOnNetworkStatusChange: true }
+    variables: { payload: { ...remixesPayload } },
+    notifyOnNetworkStatusChange: true
   });
   const [deleteRemix, { loading: deleteLoading }] = useMutation(DELETE_REMIX);
   const remixes = data?.remixes.items;
+  const totalItems = data?.remixes.meta.total;
 
   const handleOpen = () => setOpen(true);
-
   const handleClose = useCallback(() => {
     setOpen(false);
     refetch({ payload: { ...remixesPayload } });
@@ -50,24 +57,51 @@ const RemixesPage: FC = () => {
     [remixesPayload, data]
   );
 
+  const handleEditRemixClick = useCallback(
+    (id: number) => {
+      setId(id);
+      handleOpen();
+    },
+    [id, open]
+  );
+
+  const handlePaginationChange = (value: number) => {
+    setPage(value);
+    setRemixesPayload((prevState) => {
+      return {
+        ...prevState,
+        paginate: {
+          skip: prevState?.paginate?.take ? prevState.paginate.take * (value - 1) : 0,
+          take: prevState?.paginate?.take ? prevState?.paginate?.take : 5
+        }
+      };
+    });
+  };
+
+  const handleSortingClick = (columnName: string) => {
+    setRemixesPayload((prevState) => {
+      if (prevState.sorts?.length) {
+        const obj = prevState.sorts[0];
+        const currentDirection = obj.direction;
+        if (currentDirection === SortDirectionEnum.Asc) {
+          return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Desc }] };
+        }
+        return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
+      }
+      return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
+    });
+  };
+
   if (loading || deleteLoading) return <AbsoluteLoading />;
 
   return (
     <Container sx={{ display: 'flex', flexDirection: 'column' }} maxWidth="lg">
       <TableContainer component={Paper}>
         <Table sx={{ minWidth: 650 }} aria-label="simple table">
-          <TableHead>
-            <TableRow>
-              <TableCell size="small">Name</TableCell>
-              <TableCell align="center">authorEmail</TableCell>
-              <TableCell align="center">genre</TableCell>
-              <TableCell align="center">description</TableCell>
-              <TableCell align="center">price</TableCell>
-              <TableCell align="center">trackLength</TableCell>
-              <TableCell align="center">isStore</TableCell>
-              <TableCell align="center">Actions</TableCell>
-            </TableRow>
-          </TableHead>
+          <CustomTableHead
+            remixesPayload={remixesPayload}
+            handleSortingClick={handleSortingClick}
+          />
           <TableBody>
             {remixes?.map((row: IRemixModel) => (
               <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
@@ -81,7 +115,11 @@ const RemixesPage: FC = () => {
                 <TableCell align="center">{row.trackLength}</TableCell>
                 <TableCell align="center">{row.isStore && 'true'}</TableCell>
                 <TableCell align="center">
-                  <Button sx={{ mr: '10px', '&:hover': { bgcolor: 'green' } }} variant="contained">
+                  <Button
+                    onClick={() => handleEditRemixClick(row.id)}
+                    sx={{ mr: '10px', '&:hover': { bgcolor: 'green' } }}
+                    variant="contained"
+                  >
                     Edit
                   </Button>
                   <Button
@@ -97,9 +135,20 @@ const RemixesPage: FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
-        Add Row
-      </Button>
+      <Container sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
+          Add Row
+        </Button>
+
+        <Pagination
+          size="small"
+          page={page}
+          onChange={(_, value) => handlePaginationChange(value)}
+          count={Math.ceil(
+            remixesPayload?.paginate?.take ? totalItems / remixesPayload.paginate.take : 5
+          )}
+        />
+      </Container>
       <ModalWindow id={id} open={open} handleClose={handleClose} />
     </Container>
   );

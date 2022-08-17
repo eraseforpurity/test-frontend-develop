@@ -1,55 +1,102 @@
+import { useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { useMutation } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client';
 import Modal from '@mui/material/Modal';
 import { useFormik } from 'formik';
-import {
-  TextField,
-  Box,
-  Button,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox
-} from '@mui/material';
+import { TextField, Box, Button, Select, MenuItem } from '@mui/material';
 import styles from './styles';
 import BackdropLoading from '../ui/BackdropLoading/BackdropLoading';
-import { GenreTypeEnum } from '../../graphql/types/_server';
-import { CREATE_REMIX } from '../../graphql/mutations/mutations';
+import { GenreTypeEnum, IRemixCreateDto, IRemixUpdateDto } from '../../graphql/types/_server';
+import { CREATE_REMIX, UPDATE_REMIX } from '../../graphql/mutations/mutations';
+import { GET_REMIX_BY_ID } from '../../graphql/queries/queries';
 import { validationSchema } from '../../helpers/validation/validationSchema';
 
 type IModalWindow = {
   open: boolean;
   handleClose: () => void;
-  id: boolean | undefined;
+  id: number | undefined;
 };
 
 const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [createRemix, { loading }] = useMutation(CREATE_REMIX);
+  const [initialValues, setRemixById] = useState<IRemixCreateDto | IRemixUpdateDto>({
+    authorEmail: '',
+    description: '',
+    genre: GenreTypeEnum.Pop,
+    isStore: true,
+    name: '',
+    price: 0,
+    trackLength: 0
+  });
 
-  const formik = useFormik({
-    initialValues: {
-      authorEmail: '',
-      description: '',
-      genre: GenreTypeEnum.Pop,
-      isStore: true,
-      name: '',
-      price: 0,
-      trackLength: 0
-    },
-    validationSchema,
-    onSubmit: (values) => {
-      createRemix({ variables: { payload: { ...values } } })
-        .then(() => {
-          enqueueSnackbar('Row was added');
-          handleClose();
-        })
-        .catch(() => enqueueSnackbar('oops, an error'));
+  const isSkip = Boolean(id ?? false);
+
+  const { data, loading: getRemixByIdLoading } = useQuery(GET_REMIX_BY_ID, {
+    skip: !isSkip,
+    variables: { payload: { id } },
+    onCompleted: (data) => {
+      setRemixById(data.remixById);
     }
   });
 
-  if (loading) return <BackdropLoading />;
+  const [createRemix, { loading }] = useMutation(CREATE_REMIX);
+  const [updateRemix, { loading: updateLoading }] = useMutation(UPDATE_REMIX);
+
+  const handleCreateRemix = (values: any) => {
+    createRemix({ variables: { payload: { ...values } } })
+      .then(({ data }) => {
+        data?.createRemix?.isStore
+          ? enqueueSnackbar('Row was added')
+          : enqueueSnackbar('Row wasn`t stored');
+
+        handleClose();
+      })
+      .catch(({ message }) => enqueueSnackbar(message));
+  };
+
+  const handleUpdateRemix = (values: any) => {
+    let payload = { id };
+
+    for (const key in values) {
+      if (key in values) {
+        if (data.remixById[key] !== values[key]) {
+          payload = { ...payload, [key]: values[key] };
+        }
+      }
+    }
+
+    updateRemix({ variables: { payload: { ...payload } } })
+      .then(({ data }) => {
+        data?.updateRemix?.isStore
+          ? enqueueSnackbar('Row was changed')
+          : enqueueSnackbar('Row wasn`t stored');
+
+        handleClose();
+      })
+      .catch(({ message }) => {
+        enqueueSnackbar(message);
+      });
+  };
+
+  const handleFormSubmit = (values: IRemixCreateDto | IRemixUpdateDto, id?: number) => {
+    if (id ?? false) {
+      handleUpdateRemix(values);
+    } else {
+      handleCreateRemix(values);
+    }
+  };
+
+  const formik = useFormik({
+    initialValues: { ...initialValues },
+    validationSchema,
+    enableReinitialize: true,
+    onSubmit: (values) => {
+      handleFormSubmit(values, id);
+    }
+  });
+
+  if (loading || getRemixByIdLoading || updateLoading) return <BackdropLoading />;
 
   return (
     <Modal open={open} onClose={handleClose}>
@@ -120,18 +167,6 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
               name="trackLength"
               value={formik.values.trackLength}
               onChange={formik.handleChange}
-            />
-
-            <FormControlLabel
-              control={
-                <Checkbox
-                  name="isStore"
-                  id="isStore"
-                  onChange={formik.handleChange}
-                  checked={formik.values.isStore}
-                />
-              }
-              label="Is Store"
             />
           </Box>
           <Button type="submit" variant="contained">
