@@ -42,7 +42,6 @@ const RemixesPage: FC = () => {
   const [deleteRemix, { loading: deleteLoading }] = useMutation(DELETE_REMIX);
   const remixes = data?.remixes.items;
   const totalItems = data?.remixes.meta.total;
-  console.log(totalItems);
   const handleOpen = () => setOpen(true);
 
   const handleClose = useCallback(() => {
