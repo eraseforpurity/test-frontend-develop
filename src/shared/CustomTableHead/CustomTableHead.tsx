@@ -4,6 +4,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import { IRemixGetDto } from '../../graphql/types/_server';
 import { tableHeadCells } from './constants';
+import { styles } from './styles';
 
 type ICustomTableHead = {
   remixesPayload: IRemixGetDto;
@@ -28,16 +29,17 @@ const CustomTableHead = ({ remixesPayload, handleSortingClick }: ICustomTableHea
   };
 
   return (
-    <TableHead>
+    <TableHead sx={styles.tableHead}>
       <TableRow>
         {tableHeadCells.map((cell) => (
-          <TableCell key={cell.columnName}>
+          <TableCell align="center" key={cell.columnName}>
             <TableSortLabel
               active={isActive(cell.columnName)}
               direction={currentDirection()}
               onClick={() => handleSortingClick(cell.columnName)}
             />
-            {cell.columnName}
+
+            {cell.label}
           </TableCell>
         ))}
 

@@ -1,3 +1,5 @@
+import colors from '@/helpers/theme/colors';
+
 const styles = {
   modal: {
     position: 'absolute',
@@ -5,15 +7,23 @@ const styles = {
     left: '50%',
     transform: 'translate(-50%, -50%)',
     width: '90%',
+    maxWidth: '450px',
+    height: 'fit-content',
     bgcolor: 'background.paper',
-    border: '2px solid #000',
+    border: `2px solid ${colors.border.main}`,
     boxShadow: 24,
-    p: 4
+    p: '50px'
   },
   formContainer: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr',
-    gap: '30px'
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '30px',
+    mb: '30px'
+  },
+  saveButton: {
+    '&:hover': {
+      bgcolor: 'green'
+    }
   }
 };
 
