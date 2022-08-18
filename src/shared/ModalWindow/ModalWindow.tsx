@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQuery } from '@apollo/client';
 import Modal from '@mui/material/Modal';
 import { useFormik } from 'formik';
-import { TextField, Box, Button, Select, MenuItem, Typography, InputLabel } from '@mui/material';
+import { TextField, Box, Button, MenuItem, Typography } from '@mui/material';
 import styles from './styles';
 import BackdropLoading from '../ui/BackdropLoading/BackdropLoading';
 import { GenreTypeEnum, IRemixCreateDto, IRemixUpdateDto } from '../../graphql/types/_server';
