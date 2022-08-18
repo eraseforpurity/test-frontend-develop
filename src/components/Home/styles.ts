@@ -1,4 +1,4 @@
-import colors from '@/helpers/theme/colors';
+import colors from '../../helpers/theme/colors';
 
 const styles = {
   video: {

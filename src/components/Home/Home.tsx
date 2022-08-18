@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo } from 'react';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import styles from './styles';
-import getRandomNumber from '@/utils/getRandomNumber';
+import getRandomNumber from '../../utils/getRandomNumber';
 
 const Home = () => {
   const randomNumberMemoized = useMemo(() => getRandomNumber(8, 9), []);

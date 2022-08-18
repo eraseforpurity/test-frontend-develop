@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import Box from '@mui/material/Box';
-import getCurrentYear from '@/utils/getCurrentYear';
+import getCurrentYear from '../../utils/getCurrentYear';
 import styles from './styles';
 
 const Footer = () => {

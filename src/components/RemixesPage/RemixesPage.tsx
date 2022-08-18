@@ -13,7 +13,7 @@ import {
   Pagination
 } from '@mui/material';
 
-import CustomTableHead from '@/shared/CustomTableHead/CustomTableHead';
+import CustomTableHead from '../../shared/CustomTableHead/CustomTableHead';
 import { styles } from './styles';
 
 import { IRemixModel, IRemixGetDto, SortDirectionEnum } from '../../graphql/types/_server';

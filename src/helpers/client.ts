@@ -21,7 +21,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 const cache = new InMemoryCache();
 
 const httpLink = createUploadLink({
-  uri: process.env.REACT_APP_GRAPHQL_URL
+  uri: 'https://test-backend.smm.dev.architech.nyc/graphql'
   // credentials: 'include'
 });
 

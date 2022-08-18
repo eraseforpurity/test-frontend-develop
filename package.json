@@ -1,7 +1,6 @@
 {
   "name": "test",
   "version": "0.1.0",
-  "homepage": "https://test-frontend-denisenko.herokuapp.com",
   "private": true,
   "engines": {
     "node": ">=18.0.0"
@@ -45,14 +44,15 @@
     "react-hook-form": "^7.29.0",
     "react-router-dom": "6",
     "react-scripts": "5.0.0",
+    "serve": "^14.0.1",
     "typescript": "^4.7.3",
     "web-vitals": "^2.1.4",
     "yup": "^0.32.11"
   },
   "scripts": {
-    "start:local": "env-cmd -e LOCAL react-app-rewired start",
-    "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
+    "dev": "react-scripts start",
+    "start": "serve -s build",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "lint": "eslint .",
     "lint:fix": "eslint --fix",

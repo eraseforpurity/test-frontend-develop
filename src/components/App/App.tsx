@@ -4,8 +4,8 @@ import { ThemeProvider } from '@mui/material/styles';
 import { ApolloProvider } from '@apollo/client';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import theme from '@/helpers/theme/theme';
-import client from '@/helpers/client';
+import theme from '../../helpers/theme/theme';
+import client from '../../helpers/client';
 import AppRoutes from '../AppRoutes/AppRoutes';
 
 function App() {

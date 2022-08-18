@@ -14,7 +14,7 @@ FRONTEND (REACTJS)
 
 ```
 yarn install
-yarn start:dev
+yarn dev
 ```
 
 ## Implemented functions
