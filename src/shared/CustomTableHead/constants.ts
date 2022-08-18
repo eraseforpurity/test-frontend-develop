@@ -1,20 +1,34 @@
+import { FilterFieldTypeEnum } from '../../graphql/types/_server';
+
 export const tableHeadCells = [
   {
-    columnName: 'name'
+    columnName: 'name',
+    type: FilterFieldTypeEnum.Text,
+    label: 'Name'
   },
   {
-    columnName: 'authorEmail'
+    columnName: 'authorEmail',
+    type: FilterFieldTypeEnum.Text,
+    label: 'Author Email'
   },
   {
-    columnName: 'genre'
+    columnName: 'genre',
+    type: FilterFieldTypeEnum.Text,
+    label: 'Genre'
   },
   {
-    columnName: 'description'
+    columnName: 'description',
+    type: FilterFieldTypeEnum.Text,
+    label: 'Description'
   },
   {
-    columnName: 'price'
+    columnName: 'price',
+    type: FilterFieldTypeEnum.Number,
+    label: 'Price'
   },
   {
-    columnName: 'trackLength'
+    columnName: 'trackLength',
+    type: FilterFieldTypeEnum.Number,
+    label: 'Track Length'
   }
 ];

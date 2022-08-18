@@ -1,51 +1,52 @@
 import { FC, useCallback, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { useSnackbar } from 'notistack';
-import { Container } from '@mui/material';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Button from '@mui/material/Button';
-import Pagination from '@mui/material/Pagination';
+import {
+  Container,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableRow,
+  Paper,
+  Button,
+  Pagination
+} from '@mui/material';
+
 import CustomTableHead from '@/shared/CustomTableHead/CustomTableHead';
+import { styles } from './styles';
 
 import { IRemixModel, IRemixGetDto, SortDirectionEnum } from '../../graphql/types/_server';
 import AbsoluteLoading from '../../shared/ui/AbsoluteLoading/AbsoluteLoading';
 import ModalWindow from '../../shared/ModalWindow/ModalWindow';
 import { DELETE_REMIX } from '../../graphql/mutations/mutations';
 import { GET_REMIXES } from '../../graphql/queries/queries';
+import { initailValuses } from './constants';
 
 const RemixesPage: FC = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [page, setPage] = useState<number>(1);
   const [open, setOpen] = useState<boolean>(false);
   const [id, setId] = useState<number | undefined>(undefined);
-  const [remixesPayload, setRemixesPayload] = useState<IRemixGetDto>({
-    filters: undefined,
-    sorts: undefined,
-    paginate: {
-      skip: 0,
-      take: 5
-    }
-  });
+  const [remixesPayload, setRemixesPayload] = useState<IRemixGetDto>(initailValuses);
 
   const { loading, data, refetch } = useQuery(GET_REMIXES, {
     variables: { payload: { ...remixesPayload } },
     notifyOnNetworkStatusChange: true
   });
   const [deleteRemix, { loading: deleteLoading }] = useMutation(DELETE_REMIX);
-  const remixes = data?.remixes.items;
-  const totalItems = data?.remixes.meta.total;
+  const remixes = data?.remixes.items as Array<IRemixModel>;
+  const totalItems = data?.remixes.meta.total as number;
 
   const handleOpen = () => setOpen(true);
-  const handleClose = useCallback(() => {
-    setOpen(false);
-    refetch({ payload: { ...remixesPayload } });
-    setId(undefined);
-  }, [remixesPayload, open]);
+  const handleClose = useCallback(
+    (withRefecth: boolean) => {
+      setId(undefined);
+      setOpen(false);
+      withRefecth && refetch({ payload: { ...remixesPayload } });
+    },
+    [remixesPayload, open, id]
+  );
 
   const handleDeleteRemixClick = useCallback(
     (id: number) => {
@@ -65,39 +66,45 @@ const RemixesPage: FC = () => {
     [id, open]
   );
 
-  const handlePaginationChange = (value: number) => {
-    setPage(value);
-    setRemixesPayload((prevState) => {
-      return {
-        ...prevState,
-        paginate: {
-          skip: prevState?.paginate?.take ? prevState.paginate.take * (value - 1) : 0,
-          take: prevState?.paginate?.take ? prevState?.paginate?.take : 5
-        }
-      };
-    });
-  };
+  const handlePaginationChange = useCallback(
+    (value: number) => {
+      setPage(value);
+      setRemixesPayload((prevState) => {
+        return {
+          ...prevState,
+          paginate: {
+            skip: prevState?.paginate?.take ? prevState.paginate.take * (value - 1) : 0,
+            take: prevState?.paginate?.take ? prevState?.paginate?.take : 5
+          }
+        };
+      });
+    },
+    [remixesPayload, page]
+  );
 
-  const handleSortingClick = (columnName: string) => {
-    setRemixesPayload((prevState) => {
-      if (prevState.sorts?.length) {
-        const obj = prevState.sorts[0];
-        const currentDirection = obj.direction;
-        if (currentDirection === SortDirectionEnum.Asc) {
-          return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Desc }] };
+  const handleSortingClick = useCallback(
+    (columnName: string) => {
+      setRemixesPayload((prevState) => {
+        if (prevState.sorts?.length) {
+          const obj = prevState.sorts[0];
+          const currentDirection = obj.direction;
+          if (currentDirection === SortDirectionEnum.Asc) {
+            return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Desc }] };
+          }
+          return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
         }
         return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
-      }
-      return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
-    });
-  };
+      });
+    },
+    [remixesPayload]
+  );
 
   if (loading || deleteLoading) return <AbsoluteLoading />;
 
   return (
-    <Container sx={{ display: 'flex', flexDirection: 'column' }} maxWidth="lg">
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} aria-label="simple table">
+    <Container sx={styles.container} maxWidth="xl">
+      <TableContainer sx={styles.tableContainer} component={Paper}>
+        <Table sx={styles.table} aria-label="simple table">
           <CustomTableHead
             remixesPayload={remixesPayload}
             handleSortingClick={handleSortingClick}
@@ -105,9 +112,7 @@ const RemixesPage: FC = () => {
           <TableBody>
             {remixes?.map((row: IRemixModel) => (
               <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                <TableCell component="th" scope="row">
-                  {row.name}
-                </TableCell>
+                <TableCell align="center">{row.name}</TableCell>
                 <TableCell align="center">{row.authorEmail}</TableCell>
                 <TableCell align="center">{row.genre}</TableCell>
                 <TableCell align="center">{row.description}</TableCell>
@@ -117,14 +122,14 @@ const RemixesPage: FC = () => {
                 <TableCell align="center">
                   <Button
                     onClick={() => handleEditRemixClick(row.id)}
-                    sx={{ mr: '10px', '&:hover': { bgcolor: 'green' } }}
+                    sx={styles.editButton}
                     variant="contained"
                   >
                     Edit
                   </Button>
                   <Button
                     onClick={() => handleDeleteRemixClick(row.id)}
-                    sx={{ '&:hover': { bgcolor: 'red' } }}
+                    sx={styles.deleteButton}
                     variant="contained"
                   >
                     Delete
@@ -135,7 +140,10 @@ const RemixesPage: FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Container sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Container
+        maxWidth="xl"
+        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
         <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
           Add Row
         </Button>
@@ -144,12 +152,14 @@ const RemixesPage: FC = () => {
           size="small"
           page={page}
           onChange={(_, value) => handlePaginationChange(value)}
-          count={Math.ceil(
-            remixesPayload?.paginate?.take ? totalItems / remixesPayload.paginate.take : 5
-          )}
+          count={
+            remixesPayload?.paginate?.take
+              ? Math.ceil(totalItems / remixesPayload.paginate.take)
+              : 1
+          }
         />
       </Container>
-      <ModalWindow id={id} open={open} handleClose={handleClose} />
+      {open && <ModalWindow id={id} open={open} handleClose={handleClose} />}
     </Container>
   );
 };

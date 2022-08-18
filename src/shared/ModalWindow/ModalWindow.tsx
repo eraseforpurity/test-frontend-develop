@@ -3,7 +3,7 @@ import { useSnackbar } from 'notistack';
 import { useMutation, useQuery } from '@apollo/client';
 import Modal from '@mui/material/Modal';
 import { useFormik } from 'formik';
-import { TextField, Box, Button, Select, MenuItem } from '@mui/material';
+import { TextField, Box, Button, Select, MenuItem, Typography, InputLabel } from '@mui/material';
 import styles from './styles';
 import BackdropLoading from '../ui/BackdropLoading/BackdropLoading';
 import { GenreTypeEnum, IRemixCreateDto, IRemixUpdateDto } from '../../graphql/types/_server';
@@ -13,7 +13,7 @@ import { validationSchema } from '../../helpers/validation/validationSchema';
 
 type IModalWindow = {
   open: boolean;
-  handleClose: () => void;
+  handleClose: (withRefecth: boolean) => void;
   id: number | undefined;
 };
 
@@ -23,7 +23,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
   const [initialValues, setRemixById] = useState<IRemixCreateDto | IRemixUpdateDto>({
     authorEmail: '',
     description: '',
-    genre: GenreTypeEnum.Pop,
+    genre: GenreTypeEnum.Electronic,
     isStore: true,
     name: '',
     price: 0,
@@ -43,25 +43,25 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
   const [createRemix, { loading }] = useMutation(CREATE_REMIX);
   const [updateRemix, { loading: updateLoading }] = useMutation(UPDATE_REMIX);
 
-  const handleCreateRemix = (values: any) => {
+  const handleCreateRemix = (values: IRemixCreateDto) => {
     createRemix({ variables: { payload: { ...values } } })
       .then(({ data }) => {
         data?.createRemix?.isStore
           ? enqueueSnackbar('Row was added')
           : enqueueSnackbar('Row wasn`t stored');
 
-        handleClose();
+        handleClose(true);
       })
       .catch(({ message }) => enqueueSnackbar(message));
   };
 
-  const handleUpdateRemix = (values: any) => {
+  const handleUpdateRemix = (values: IRemixUpdateDto) => {
     let payload = { id };
 
     for (const key in values) {
-      if (key in values) {
-        if (data.remixById[key] !== values[key]) {
-          payload = { ...payload, [key]: values[key] };
+      if ((key as keyof typeof values) in values) {
+        if (data.remixById[key] !== values[key as keyof typeof values]) {
+          payload = { ...payload, [key]: values[key as keyof typeof values] };
         }
       }
     }
@@ -72,7 +72,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
           ? enqueueSnackbar('Row was changed')
           : enqueueSnackbar('Row wasn`t stored');
 
-        handleClose();
+        handleClose(true);
       })
       .catch(({ message }) => {
         enqueueSnackbar(message);
@@ -81,9 +81,9 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
 
   const handleFormSubmit = (values: IRemixCreateDto | IRemixUpdateDto, id?: number) => {
     if (id ?? false) {
-      handleUpdateRemix(values);
+      handleUpdateRemix(values as IRemixUpdateDto);
     } else {
-      handleCreateRemix(values);
+      handleCreateRemix(values as IRemixCreateDto);
     }
   };
 
@@ -91,7 +91,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
     initialValues: { ...initialValues },
     validationSchema,
     enableReinitialize: true,
-    onSubmit: (values) => {
+    onSubmit: (values: IRemixCreateDto | IRemixUpdateDto) => {
       handleFormSubmit(values, id);
     }
   });
@@ -99,14 +99,15 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
   if (loading || getRemixByIdLoading || updateLoading) return <BackdropLoading />;
 
   return (
-    <Modal open={open} onClose={handleClose}>
+    <Modal open={open} onClose={() => handleClose(false)}>
       <Box sx={styles.modal}>
         <form onSubmit={formik.handleSubmit}>
           <Box sx={styles.formContainer}>
+            <Typography variant="h6">{isSkip ? 'Edit row' : 'Create row'}</Typography>
             <TextField
               helperText={formik.touched.name && formik.errors.name}
               error={formik.touched.name && Boolean(formik.errors.name)}
-              label="name"
+              label="Name"
               id="name"
               name="name"
               value={formik.values.name}
@@ -116,15 +117,15 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
             <TextField
               helperText={formik.touched.authorEmail && formik.errors.authorEmail}
               error={formik.touched.authorEmail && Boolean(formik.errors.authorEmail)}
-              label="authorEmail"
+              label="Author Email"
               value={formik.values.authorEmail}
               onChange={formik.handleChange}
               id="authorEmail"
               name="authorEmail"
             />
-
-            <Select
-              label="genre"
+            <TextField
+              select
+              label="Genre"
               id="genre"
               name="genre"
               value={formik.values.genre}
@@ -135,12 +136,12 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
                   {genre}
                 </MenuItem>
               ))}
-            </Select>
+            </TextField>
 
             <TextField
               helperText={formik.touched.description && formik.errors.description}
               error={formik.touched.description && Boolean(formik.errors.description)}
-              label="description"
+              label="Description"
               id="description"
               name="description"
               value={formik.values.description}
@@ -150,7 +151,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
             <TextField
               helperText={formik.touched.price && formik.errors.price}
               error={formik.touched.price && Boolean(formik.errors.price)}
-              label="price"
+              label="Price"
               type="number"
               id="price"
               name="price"
@@ -161,7 +162,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
             <TextField
               helperText={formik.touched.trackLength && formik.errors.trackLength}
               error={formik.touched.trackLength && Boolean(formik.errors.trackLength)}
-              label="trackLength"
+              label="Track Length"
               type="number"
               id="trackLength"
               name="trackLength"
@@ -169,7 +170,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
               onChange={formik.handleChange}
             />
           </Box>
-          <Button type="submit" variant="contained">
+          <Button sx={styles.saveButton} type="submit" variant="contained">
             Save Changes
           </Button>
         </form>
