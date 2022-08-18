@@ -2,6 +2,8 @@
 
 FRONTEND (REACTJS)
 
+## **In order to install all dependencies you must use node 18.0.0**
+
 ## How to
 
 1. Install eslint & prettier pluggins in VS Code
@@ -9,18 +11,22 @@ FRONTEND (REACTJS)
 3. Run commands:
 
 ## javascript local
+
 ```
 yarn install
 yarn start:dev
 ```
-## javascript build:dev
+
+## Implemented functions
+
 ```
-yarn install
-yarn build:dev
+Open the App. Go to page Remixes.
+
+Optional functions, that were implemented : sorting and pagination
 ```
 
-## docker build:dev and run
-```
-docker build -t test-frontend .
-docker run -p 8080 -t test-frontend
-```
+1. Adding new fields - button **Add Row**
+2. Updating existing fields - button **Edit**
+3. Delete existing fields - button **Delete**
+4. In order to use pagination - click on pagination pages
+5. To sort the table - click on the arrow, which is located in the column heading to the left of the text
