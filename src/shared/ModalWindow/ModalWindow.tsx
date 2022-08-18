@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQuery } from '@apollo/client';
 import Modal from '@mui/material/Modal';
@@ -10,6 +10,7 @@ import { GenreTypeEnum, IRemixCreateDto, IRemixUpdateDto } from '../../graphql/t
 import { CREATE_REMIX, UPDATE_REMIX } from '../../graphql/mutations/mutations';
 import { GET_REMIX_BY_ID } from '../../graphql/queries/queries';
 import { validationSchema } from '../../helpers/validation/validationSchema';
+import { initailValues } from './constants';
 
 type IModalWindow = {
   open: boolean;
@@ -20,15 +21,7 @@ type IModalWindow = {
 const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [initialValues, setRemixById] = useState<IRemixCreateDto | IRemixUpdateDto>({
-    authorEmail: '',
-    description: '',
-    genre: GenreTypeEnum.Electronic,
-    isStore: true,
-    name: '',
-    price: 0,
-    trackLength: 0
-  });
+  const [initialValues, setRemixById] = useState<IRemixCreateDto | IRemixUpdateDto>(initailValues);
 
   const isSkip = Boolean(id ?? false);
 
@@ -59,7 +52,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
     let payload = { id };
 
     for (const key in values) {
-      if ((key as keyof typeof values) in values) {
+      if (key in values) {
         if (data.remixById[key] !== values[key as keyof typeof values]) {
           payload = { ...payload, [key]: values[key as keyof typeof values] };
         }
@@ -96,10 +89,16 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
     }
   });
 
+  const handleWindowClose = () => {
+    formik.resetForm();
+    setRemixById(initailValues);
+    handleClose(false);
+  };
+
   if (loading || getRemixByIdLoading || updateLoading) return <BackdropLoading />;
 
   return (
-    <Modal open={open} onClose={() => handleClose(false)}>
+    <Modal open={open} onClose={handleWindowClose}>
       <Box sx={styles.modal}>
         <form onSubmit={formik.handleSubmit}>
           <Box sx={styles.formContainer}>

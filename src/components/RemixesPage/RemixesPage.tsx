@@ -140,11 +140,8 @@ const RemixesPage: FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Container
-        maxWidth="xl"
-        sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-      >
-        <Button onClick={handleOpen} sx={{ placeSelf: 'center', mt: '20px' }} variant="contained">
+      <Container maxWidth="xl" sx={styles.paginationContainer}>
+        <Button onClick={handleOpen} variant="contained">
           Add Row
         </Button>
 
@@ -159,7 +156,7 @@ const RemixesPage: FC = () => {
           }
         />
       </Container>
-      {open && <ModalWindow id={id} open={open} handleClose={handleClose} />}
+      <ModalWindow id={id} open={open} handleClose={handleClose} />
     </Container>
   );
 };
