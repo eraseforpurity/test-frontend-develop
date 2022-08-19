@@ -17,7 +17,7 @@ const Home = () => {
           <source src={`./img/vid${randomNumberMemoized}.mp4`} type="video/mp4" />
         </video>
       ) : (
-        <img src="./img/mobileBg2.jpg" alt="" />
+        <img src="./img/mobileBg2.jpg" alt="mobile image" />
       )}
       <Container maxWidth="md" sx={styles.text}>
         <Typography variant="h1">

@@ -17,7 +17,7 @@ import CustomTableHead from '../../shared/CustomTableHead/CustomTableHead';
 import { styles } from './styles';
 
 import { IRemixModel, IRemixGetDto, SortDirectionEnum } from '../../graphql/types/_server';
-import AbsoluteLoading from '../../shared/ui/AbsoluteLoading/AbsoluteLoading';
+import AbsoluteLoader from '../../shared/ui/AbsoluteLoader/AbsoluteLoader';
 import ModalWindow from '../../shared/ModalWindow/ModalWindow';
 import { DELETE_REMIX } from '../../graphql/mutations/mutations';
 import { GET_REMIXES } from '../../graphql/queries/queries';
@@ -27,16 +27,18 @@ const RemixesPage: FC = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [page, setPage] = useState<number>(1);
   const [open, setOpen] = useState<boolean>(false);
-  const [id, setId] = useState<number | undefined>(undefined);
+  const [id, setId] = useState<number | undefined>();
   const [remixesPayload, setRemixesPayload] = useState<IRemixGetDto>(initailValuses);
 
   const { loading, data, refetch } = useQuery(GET_REMIXES, {
     variables: { payload: { ...remixesPayload } },
     notifyOnNetworkStatusChange: true
   });
-  const [deleteRemix, { loading: deleteLoading }] = useMutation(DELETE_REMIX);
+  const [deleteRemix, { loading: loadingOnDelete }] = useMutation(DELETE_REMIX);
+
   const remixes = data?.remixes.items as Array<IRemixModel>;
   const totalItems = data?.remixes.meta.total as number;
+  const paginationCount = Math.ceil(totalItems / initailValuses.paginate.take) as number;
 
   const handleOpen = () => setOpen(true);
   const handleClose = useCallback(
@@ -48,14 +50,28 @@ const RemixesPage: FC = () => {
     [remixesPayload, open, id]
   );
 
+  const handlePaginationShift = () => {
+    if (totalItems - 1 === (page - 1) * initailValuses.paginate.take) {
+      setPage(1);
+      setRemixesPayload((prevState) => ({
+        ...prevState,
+        paginate: {
+          skip: 0,
+          take: prevState?.paginate?.take ? prevState?.paginate?.take : initailValuses.paginate.take
+        }
+      }));
+    }
+  };
+
   const handleDeleteRemixClick = useCallback(
     (id: number) => {
       deleteRemix({ variables: { payload: { id } } }).then(() => {
+        handlePaginationShift();
         enqueueSnackbar('Row was deleted');
         refetch({ payload: { ...remixesPayload } });
       });
     },
-    [remixesPayload, data]
+    [remixesPayload, data, totalItems, page]
   );
 
   const handleEditRemixClick = useCallback(
@@ -69,15 +85,13 @@ const RemixesPage: FC = () => {
   const handlePaginationChange = useCallback(
     (value: number) => {
       setPage(value);
-      setRemixesPayload((prevState) => {
-        return {
-          ...prevState,
-          paginate: {
-            skip: prevState?.paginate?.take ? prevState.paginate.take * (value - 1) : 0,
-            take: prevState?.paginate?.take ? prevState?.paginate?.take : 5
-          }
-        };
-      });
+      setRemixesPayload((prevState) => ({
+        ...prevState,
+        paginate: {
+          skip: prevState?.paginate?.take ? prevState.paginate.take * (value - 1) : 0,
+          take: prevState?.paginate?.take ? prevState?.paginate?.take : initailValuses.paginate.take
+        }
+      }));
     },
     [remixesPayload, page]
   );
@@ -91,7 +105,6 @@ const RemixesPage: FC = () => {
           if (currentDirection === SortDirectionEnum.Asc) {
             return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Desc }] };
           }
-          return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
         }
         return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Asc }] };
       });
@@ -99,9 +112,9 @@ const RemixesPage: FC = () => {
     [remixesPayload]
   );
 
-  if (loading || deleteLoading) return <AbsoluteLoading />;
-
-  return (
+  return loading || loadingOnDelete ? (
+    <AbsoluteLoader />
+  ) : (
     <Container sx={styles.container} maxWidth="xl">
       <TableContainer sx={styles.tableContainer} component={Paper}>
         <Table sx={styles.table} aria-label="simple table">
@@ -109,6 +122,7 @@ const RemixesPage: FC = () => {
             remixesPayload={remixesPayload}
             handleSortingClick={handleSortingClick}
           />
+
           <TableBody>
             {remixes?.map((row: IRemixModel) => (
               <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
@@ -140,6 +154,7 @@ const RemixesPage: FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
       <Container maxWidth="xl" sx={styles.paginationContainer}>
         <Button onClick={handleOpen} variant="contained">
           Add Row
@@ -149,13 +164,10 @@ const RemixesPage: FC = () => {
           size="small"
           page={page}
           onChange={(_, value) => handlePaginationChange(value)}
-          count={
-            remixesPayload?.paginate?.take
-              ? Math.ceil(totalItems / remixesPayload.paginate.take)
-              : 1
-          }
+          count={paginationCount}
         />
       </Container>
+
       <ModalWindow id={id} open={open} handleClose={handleClose} />
     </Container>
   );

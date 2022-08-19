@@ -3,7 +3,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { FC, memo } from 'react';
 import styles from './styles';
 
-const BackdropLoading: FC = ({ ...props }) => {
+const BackdropLoader: FC = ({ ...props }) => {
   return (
     <Backdrop sx={styles} open>
       <CircularProgress {...props} color="secondary" size={30} />
@@ -11,4 +11,4 @@ const BackdropLoading: FC = ({ ...props }) => {
   );
 };
 
-export default memo(BackdropLoading);
+export default memo(BackdropLoader);

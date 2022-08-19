@@ -5,7 +5,7 @@ import Modal from '@mui/material/Modal';
 import { useFormik } from 'formik';
 import { TextField, Box, Button, MenuItem, Typography } from '@mui/material';
 import styles from './styles';
-import BackdropLoading from '../ui/BackdropLoading/BackdropLoading';
+import BackdropLoader from '../ui/BackdropLoader/BackdropLoader';
 import { GenreTypeEnum, IRemixCreateDto, IRemixUpdateDto } from '../../graphql/types/_server';
 import { CREATE_REMIX, UPDATE_REMIX } from '../../graphql/mutations/mutations';
 import { GET_REMIX_BY_ID } from '../../graphql/queries/queries';
@@ -95,14 +95,20 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
     handleClose(false);
   };
 
-  if (loading || getRemixByIdLoading || updateLoading) return <BackdropLoading />;
+  const priceValue = formik.values.price ? formik.values.price.toString() : formik.values.price;
+  const trackLengthValue = formik.values.trackLength
+    ? formik.values.trackLength.toString()
+    : formik.values.trackLength;
 
-  return (
+  return loading || getRemixByIdLoading || updateLoading ? (
+    <BackdropLoader />
+  ) : (
     <Modal open={open} onClose={handleWindowClose}>
       <Box sx={styles.modal}>
         <form onSubmit={formik.handleSubmit}>
           <Box sx={styles.formContainer}>
             <Typography variant="h6">{isSkip ? 'Edit row' : 'Create row'}</Typography>
+
             <TextField
               helperText={formik.touched.name && formik.errors.name}
               error={formik.touched.name && Boolean(formik.errors.name)}
@@ -122,6 +128,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
               id="authorEmail"
               name="authorEmail"
             />
+
             <TextField
               select
               label="Genre"
@@ -141,6 +148,8 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
               helperText={formik.touched.description && formik.errors.description}
               error={formik.touched.description && Boolean(formik.errors.description)}
               label="Description"
+              multiline
+              maxRows={5}
               id="description"
               name="description"
               value={formik.values.description}
@@ -154,7 +163,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
               type="number"
               id="price"
               name="price"
-              value={formik.values.price}
+              value={priceValue}
               onChange={formik.handleChange}
             />
 
@@ -165,12 +174,13 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
               type="number"
               id="trackLength"
               name="trackLength"
-              value={formik.values.trackLength}
+              value={trackLengthValue}
               onChange={formik.handleChange}
             />
           </Box>
+
           <Button sx={styles.saveButton} type="submit" variant="contained">
-            Save Changes
+            {isSkip ? 'Save Changes' : 'Save'}
           </Button>
         </form>
       </Box>

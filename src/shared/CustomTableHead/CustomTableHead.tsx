@@ -20,10 +20,10 @@ const CustomTableHead = ({ remixesPayload, handleSortingClick }: ICustomTableHea
     return false;
   };
 
-  const currentDirection = () => {
+  const currentDirection = (name: string) => {
     if (remixesPayload.sorts?.length) {
       const obj = remixesPayload.sorts[0];
-      return obj.direction;
+      if (obj.columnName === name) return obj.direction;
     }
     return 'asc';
   };
@@ -32,11 +32,14 @@ const CustomTableHead = ({ remixesPayload, handleSortingClick }: ICustomTableHea
     <TableHead sx={styles.tableHead}>
       <TableRow>
         {tableHeadCells.map((cell) => (
-          <TableCell align="center" key={cell.columnName}>
+          <TableCell
+            onClick={() => handleSortingClick(cell.columnName)}
+            align="center"
+            key={cell.columnName}
+          >
             <TableSortLabel
               active={isActive(cell.columnName)}
-              direction={currentDirection()}
-              onClick={() => handleSortingClick(cell.columnName)}
+              direction={currentDirection(cell.columnName)}
             />
 
             {cell.label}
@@ -44,6 +47,7 @@ const CustomTableHead = ({ remixesPayload, handleSortingClick }: ICustomTableHea
         ))}
 
         <TableCell align="center">isStore</TableCell>
+
         <TableCell align="center">Actions</TableCell>
       </TableRow>
     </TableHead>
