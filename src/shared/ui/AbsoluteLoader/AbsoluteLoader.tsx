@@ -4,7 +4,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { IProps } from './types';
 import styles from './styles';
 
-const AbsoluteLoading: FC<IProps> = ({ size = 40, color = 'primary', ...props }) => {
+const AbsoluteLoader: FC<IProps> = ({ size = 40, color = 'primary', ...props }) => {
   return (
     <Box sx={styles}>
       <CircularProgress size={size} color={color} {...props} />
@@ -12,4 +12,4 @@ const AbsoluteLoading: FC<IProps> = ({ size = 40, color = 'primary', ...props })
   );
 };
 
-export default memo(AbsoluteLoading);
+export default memo(AbsoluteLoader);

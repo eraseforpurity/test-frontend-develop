@@ -3,6 +3,6 @@ export const initailValuses = {
   sorts: undefined,
   paginate: {
     skip: 0,
-    take: 5
+    take: 10
   }
 };
