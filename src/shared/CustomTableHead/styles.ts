@@ -1,8 +1,7 @@
 export const styles = {
   tableHead: {
     th: {
-      minWidth: '150px',
-      cursor: 'pointer'
+      minWidth: '150px'
     },
     '& .MuiTableSortLabel-root .MuiSvgIcon-root': {
       opacity: '0.2'
@@ -10,5 +9,8 @@ export const styles = {
     '& .MuiTableSortLabel-root.Mui-active .MuiSvgIcon-root': {
       opacity: '1'
     }
+  },
+  tableHeadCell: {
+    cursor: 'pointer'
   }
 };
