@@ -17,7 +17,6 @@ import CustomTableHead from '../../shared/CustomTableHead/CustomTableHead';
 import { styles } from './styles';
 
 import { IRemixModel, IRemixGetDto, SortDirectionEnum } from '../../graphql/types/_server';
-import AbsoluteLoader from '../../shared/ui/AbsoluteLoader/AbsoluteLoader';
 import ModalWindow from '../../shared/ModalWindow/ModalWindow';
 import { DELETE_REMIX } from '../../graphql/mutations/mutations';
 import { GET_REMIXES } from '../../graphql/queries/queries';
@@ -27,23 +26,28 @@ const RemixesPage: FC = () => {
   const { enqueueSnackbar } = useSnackbar();
   const [page, setPage] = useState<number>(1);
   const [open, setOpen] = useState<boolean>(false);
-  const [id, setId] = useState<number | undefined>();
+  const [id, setId] = useState<number | undefined | null>();
   const [remixesPayload, setRemixesPayload] = useState<IRemixGetDto>(initailValuses);
+  const [remixesState, setRemixesDataState] = useState<IRemixModel[] | undefined>();
+  const [totalItems, setTotalItems] = useState<number>(0);
 
   const { loading, data, refetch } = useQuery(GET_REMIXES, {
     variables: { payload: { ...remixesPayload } },
-    notifyOnNetworkStatusChange: true
+    notifyOnNetworkStatusChange: true,
+    fetchPolicy: 'network-only',
+    onCompleted(data) {
+      setRemixesDataState(data.remixes.items);
+      setTotalItems(data.remixes.meta.total);
+    }
   });
   const [deleteRemix, { loading: loadingOnDelete }] = useMutation(DELETE_REMIX);
 
-  const remixes = data?.remixes.items as Array<IRemixModel>;
-  const totalItems = data?.remixes.meta.total as number;
   const paginationCount = Math.ceil(totalItems / initailValuses.paginate.take) as number;
 
   const handleOpen = () => setOpen(true);
   const handleClose = useCallback(
     (withRefecth: boolean) => {
-      setId(undefined);
+      setId(null);
       setOpen(false);
       withRefecth && refetch({ payload: { ...remixesPayload } });
     },
@@ -102,7 +106,8 @@ const RemixesPage: FC = () => {
         if (prevState.sorts?.length) {
           const obj = prevState.sorts[0];
           const currentDirection = obj.direction;
-          if (currentDirection === SortDirectionEnum.Asc) {
+          const name = obj.columnName;
+          if (currentDirection === SortDirectionEnum.Asc && name === columnName) {
             return { ...prevState, sorts: [{ columnName, direction: SortDirectionEnum.Desc }] };
           }
         }
@@ -111,12 +116,12 @@ const RemixesPage: FC = () => {
     },
     [remixesPayload]
   );
-
-  return loading || loadingOnDelete ? (
-    <AbsoluteLoader />
-  ) : (
+  return (
     <Container sx={styles.container} maxWidth="xl">
-      <TableContainer sx={styles.tableContainer} component={Paper}>
+      <TableContainer
+        sx={loading || loadingOnDelete ? styles.tableContainerOnFetch : styles.tableContainer}
+        component={Paper}
+      >
         <Table sx={styles.table} aria-label="simple table">
           <CustomTableHead
             remixesPayload={remixesPayload}
@@ -124,7 +129,7 @@ const RemixesPage: FC = () => {
           />
 
           <TableBody>
-            {remixes?.map((row: IRemixModel) => (
+            {remixesState?.map((row: IRemixModel) => (
               <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                 <TableCell align="center">{row.name}</TableCell>
                 <TableCell align="center">{row.authorEmail}</TableCell>
@@ -132,7 +137,7 @@ const RemixesPage: FC = () => {
                 <TableCell align="center">{row.description}</TableCell>
                 <TableCell align="center">{row.price}</TableCell>
                 <TableCell align="center">{row.trackLength}</TableCell>
-                <TableCell align="center">{row.isStore && 'true'}</TableCell>
+                <TableCell align="center">{row.isStore ? 'Yes' : 'No'}</TableCell>
                 <TableCell align="center">
                   <Button
                     onClick={() => handleEditRemixClick(row.id)}

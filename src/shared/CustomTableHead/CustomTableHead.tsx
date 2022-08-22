@@ -6,12 +6,12 @@ import { IRemixGetDto } from '../../graphql/types/_server';
 import { tableHeadCells } from './constants';
 import { styles } from './styles';
 
-type ICustomTableHead = {
+type CustomTableHeadProps = {
   remixesPayload: IRemixGetDto;
   handleSortingClick: (cell: string) => void;
 };
 
-const CustomTableHead = ({ remixesPayload, handleSortingClick }: ICustomTableHead) => {
+const CustomTableHead = ({ remixesPayload, handleSortingClick }: CustomTableHeadProps) => {
   const isActive = (cell: string) => {
     if (remixesPayload.sorts?.length) {
       const obj = remixesPayload.sorts[0];
@@ -33,6 +33,7 @@ const CustomTableHead = ({ remixesPayload, handleSortingClick }: ICustomTableHea
       <TableRow>
         {tableHeadCells.map((cell) => (
           <TableCell
+            sx={styles.tableHeadCell}
             onClick={() => handleSortingClick(cell.columnName)}
             align="center"
             key={cell.columnName}
@@ -46,7 +47,7 @@ const CustomTableHead = ({ remixesPayload, handleSortingClick }: ICustomTableHea
           </TableCell>
         ))}
 
-        <TableCell align="center">isStore</TableCell>
+        <TableCell align="center">Available in Store</TableCell>
 
         <TableCell align="center">Actions</TableCell>
       </TableRow>

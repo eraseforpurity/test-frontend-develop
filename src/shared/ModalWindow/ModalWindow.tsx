@@ -12,13 +12,13 @@ import { GET_REMIX_BY_ID } from '../../graphql/queries/queries';
 import { validationSchema } from '../../helpers/validation/validationSchema';
 import { initailValues } from './constants';
 
-type IModalWindow = {
+type ModalWindowProps = {
   open: boolean;
   handleClose: (withRefecth: boolean) => void;
-  id: number | undefined;
+  id: number | undefined | null;
 };
 
-const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
+const ModalWindow = ({ open, handleClose, id }: ModalWindowProps) => {
   const { enqueueSnackbar } = useSnackbar();
 
   const [initialValues, setRemixById] = useState<IRemixCreateDto | IRemixUpdateDto>(initailValues);
@@ -72,7 +72,7 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
       });
   };
 
-  const handleFormSubmit = (values: IRemixCreateDto | IRemixUpdateDto, id?: number) => {
+  const handleFormSubmit = (values: IRemixCreateDto | IRemixUpdateDto, id?: number | null) => {
     if (id ?? false) {
       handleUpdateRemix(values as IRemixUpdateDto);
     } else {
@@ -95,10 +95,8 @@ const ModalWindow = ({ open, handleClose, id }: IModalWindow) => {
     handleClose(false);
   };
 
-  const priceValue = formik.values.price ? formik.values.price.toString() : formik.values.price;
-  const trackLengthValue = formik.values.trackLength
-    ? formik.values.trackLength.toString()
-    : formik.values.trackLength;
+  const priceValue = formik.values.price?.toString();
+  const trackLengthValue = formik.values.trackLength?.toString();
 
   return loading || getRemixByIdLoading || updateLoading ? (
     <BackdropLoader />
